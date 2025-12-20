@@ -28,7 +28,7 @@ module.exports = function buildAnswer(fields) {
     const buf = [];
 
     // Encode name
-    const nameParts = name.spit('.');
+    const nameParts = name.split('.');
     const nameBufs = [];
     for (const part of nameParts) {
         nameBufs.push(Buffer.from([part.length]));
