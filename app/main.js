@@ -19,22 +19,28 @@ const dgram = require("dgram");
 
 const buildHeader = require("./helpers/build_header");
 const buildQuestion = require("./helpers/build_question");
+const buildAnswer = require("./helpers/build_answer")
 
 const udpSocket = dgram.createSocket("udp4");
 udpSocket.bind(2053, "127.0.0.1");
 
 udpSocket.on("message", (buf, rinfo) => {
   try {
-    let response
+    let response;
 
     // Build Header
-    const headerFields = [1234,1,0,0,0,0,0,0,0,1,0,0,0] // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
-    response = buildHeader(headerFields)
+    const headerFields = [1234,1,0,0,0,0,0,0,0,1,1,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+    response = buildHeader(headerFields);
 
     // Build Question
-    const questionFields = ["codecrafters.io",1,1]
-    const question = buildQuestion(questionFields); // Domain, QTYPE A, QCLASS IN
+    const questionFields = ["codecrafters.io",1,1];
+    const question = buildQuestion(questionFields); // Domain, QTYPE, QCLASS
     response = Buffer.concat([response, question]);
+
+    // Build Answer
+    const answerFields = ["codecrafters.io",1,1,60,4,Buffer.from([172,66,144,113])]; // Domain, QTYPE, QCLASS, TTL, RDLENGTH, RDATA (IP)
+    const answer = buildAnswer(answerFields);
+    response = Buffer.concat([response, answer])
 
     // Send Response
     udpSocket.send(response, rinfo.port, rinfo.address);
