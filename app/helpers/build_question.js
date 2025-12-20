@@ -15,7 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with LordDNS.  If not, see <https://www.gnu.org/licenses/>.
 
-module.exports = function buildQuestion(domainName, qtype, qclass) {
+module.exports = function buildQuestion(fields) {
+    const [
+        domainName,
+        qtype,
+        qclass
+    ] = fields
+
     const labels = domainName.split('.');
     const parts = [];
     for (const label of labels) {

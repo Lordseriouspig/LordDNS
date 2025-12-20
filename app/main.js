@@ -32,7 +32,8 @@ udpSocket.on("message", (buf, rinfo) => {
     response = buildHeader(headerFields)
 
     // Build Question
-    const question = buildQuestion("codecrafters.io", 1, 1); // Domain, QTYPE A, QCLASS IN
+    const questionFields = ["codecrafters.io",1,1]
+    const question = buildQuestion(questionFields); // Domain, QTYPE A, QCLASS IN
     response = Buffer.concat([response, question]);
 
     // Send Response
