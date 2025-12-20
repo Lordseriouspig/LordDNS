@@ -18,15 +18,26 @@
 const dgram = require("dgram");
 
 const buildHeader = require("./helpers/build_header");
+const buildQuestion = require("./helpers/build_question");
 
 const udpSocket = dgram.createSocket("udp4");
 udpSocket.bind(2053, "127.0.0.1");
 
 udpSocket.on("message", (buf, rinfo) => {
   try {
-    const fields = [1234,1,0,0,0,0,0,0,0,0,0,0,0] // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
-    const response = buildHeader(fields)
+    let response
+
+    // Build Header
+    const headerFields = [1234,1,0,0,0,0,0,0,0,1,0,0,0] // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+    response = buildHeader(headerFields)
+
+    // Build Question
+    const question = buildQuestion("codecrafters.io", 1, 1); // Domain, QTYPE A, QCLASS IN
+    response = Buffer.concat([response, question]);
+
+    // Send Response
     udpSocket.send(response, rinfo.port, rinfo.address);
+
   } catch (e) {
     console.log(`Error receiving data: ${e}`);
   }
