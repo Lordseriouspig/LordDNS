@@ -37,24 +37,47 @@ udpSocket.on("message", (buf, rinfo) => {
     // Get required info from header
     const [ transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount ] = header;
 
+    // Check some things
+    if (opcode !== 0) {
+      console.log(`Unsupported opcode: ${opcode}`);
+      rcode = 4;
+    } else {
+      rcode = 0;
+    }
+
     // Build Response
     let response;
-    // Build Header
-    const headerFields = [transactionID,1,opcode,0,0,rd,0,0,0,1,1,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
-    response = buildHeader(headerFields);
 
-    // Build Question
-    const questionFields = ["codecrafters.io",1,1];
-    const question = buildQuestion(questionFields); // Domain, QTYPE, QCLASS
-    response = Buffer.concat([response, question]);
+    if (rcode === 0) {
+      // Build Header
+      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,rcode,1,1,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+      response = buildHeader(headerFields);
 
-    // Build Answer
-    const answerFields = ["codecrafters.io",1,1,60,4,Buffer.from([172,66,144,113])]; // Domain, QTYPE, QCLASS, TTL, RDLENGTH, RDATA (IP)
-    const answer = buildAnswer(answerFields);
-    response = Buffer.concat([response, answer])
+      // Build Question
+      const questionFields = ["codecrafters.io",1,1];
+      const question = buildQuestion(questionFields); // Domain, QTYPE, QCLASS
+      response = Buffer.concat([response, question]);
 
-    // Send Response
-    udpSocket.send(response, rinfo.port, rinfo.address);
+      // Build Answer
+      const answerFields = ["codecrafters.io",1,1,60,4,Buffer.from([172,66,144,113])]; // Domain, QTYPE, QCLASS, TTL, RDLENGTH, RDATA (IP)
+      const answer = buildAnswer(answerFields);
+      response = Buffer.concat([response, answer])
+
+      // Send Response
+      udpSocket.send(response, rinfo.port, rinfo.address);
+    } else {
+      // Build Header
+      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,rcode,1,0,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+      response = buildHeader(headerFields);
+
+      // Build Question
+      const questionFields = ["codecrafters.io",1,1];
+      const question = buildQuestion(questionFields); // Domain, QTYPE, QCLASS
+      response = Buffer.concat([response, question]);
+
+      // Send Response
+      udpSocket.send(response, rinfo.port, rinfo.address);
+    }
 
   } catch (e) {
     console.error(`Error receiving data: ${e}`);
