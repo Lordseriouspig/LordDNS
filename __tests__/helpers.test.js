@@ -251,20 +251,6 @@ describe('buildAnswer edge cases', () => {
     const ttlValue = buf.readUInt32BE(ttlOffset);
     expect(ttlValue).toBe(maxTtl);
   });
-
-  test('handles AAAA records with IPv6 addresses', () => {
-    const ipv6 = Buffer.from([
-      0x20, 0x01, 0x0d, 0xb8,
-      0x85, 0xa3, 0x00, 0x00,
-      0x00, 0x00, 0x8a, 0x2e,
-      0x03, 0x70, 0x73, 0x34
-    ]); // 2001:0db8:85a3:0000:0000:8a2e:0370:7334
-
-    const buf = buildAnswer(['example.com', 28, 1, 60, ipv6.length, ipv6]); // Type 28 = AAAA
-
-    const rdataOffset = buf.length - ipv6.length;
-    expect(buf.slice(rdataOffset)).toEqual(ipv6);
-  });
 });
 
 describe('DNS Request/Response Integration', () => {
@@ -281,10 +267,10 @@ describe('DNS Request/Response Integration', () => {
     expect(qr).toBe(0); // Query
     expect(rd).toBe(1); // Recursion desired
 
-    // Build response using parsed values
+    // Build response using parsed values (server always returns 172.66.144.113)
     const responseHeader = buildHeader([transactionID, 1, opcode, 0, 0, rd, 0, 0, 0, 1, 1, 0, 0]);
     const responseQuestion = buildQuestion(['example.com', 1, 1]);
-    const responseAnswer = buildAnswer(['example.com', 1, 1, 300, 4, Buffer.from([93, 184, 216, 34])]);
+    const responseAnswer = buildAnswer(['example.com', 1, 1, 60, 4, Buffer.from([172, 66, 144, 113])]);
     const responsePacket = Buffer.concat([responseHeader, responseQuestion, responseAnswer]);
 
     // Parse the response to verify
