@@ -40,17 +40,17 @@ udpSocket.on("message", (buf, rinfo) => {
     // Check some things
     if (opcode !== 0) {
       console.log(`Unsupported opcode: ${opcode}`);
-      rcode = 4;
+      responseRcode = 4;
     } else {
-      rcode = 0;
+      responseRcode = 0;
     }
 
     // Build Response
     let response;
 
-    if (rcode === 0) {
+    if (responseRcode === 0) {
       // Build Header
-      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,rcode,1,1,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,responseRcode,1,1,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
       response = buildHeader(headerFields);
 
       // Build Question
@@ -67,7 +67,7 @@ udpSocket.on("message", (buf, rinfo) => {
       udpSocket.send(response, rinfo.port, rinfo.address);
     } else {
       // Build Header
-      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,rcode,1,0,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,responseRcode,1,0,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
       response = buildHeader(headerFields);
 
       // Build Question
