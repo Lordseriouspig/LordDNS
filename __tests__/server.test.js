@@ -9,10 +9,10 @@
  */
 
 const dgram = require('dgram');
-const buildHeader = require('../app/helpers/build_header');
-const buildQuestion = require('../app/helpers/build_question');
-const parseHeader = require('../app/helpers/parse_header');
-const parseQuestion = require('../app/helpers/parse_question');
+const buildHeader = require('../app/dns/helpers/build_header');
+const buildQuestion = require('../app/dns/helpers/build_question');
+const parseHeader = require('../app/dns/helpers/parse_header');
+const parseQuestion = require('../app/dns/helpers/parse_question');
 
 // Helper to send DNS query and get response
 function sendDNSQuery(query, timeout = 1000) {

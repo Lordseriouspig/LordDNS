@@ -1,7 +1,7 @@
-const buildHeader = require('../app/helpers/build_header');
-const buildQuestion = require('../app/helpers/build_question');
-const buildAnswer = require('../app/helpers/build_answer');
-const parseHeader = require('../app/helpers/parse_header');
+const buildHeader = require('../app/dns/helpers/build_header');
+const buildQuestion = require('../app/dns/helpers/build_question');
+const buildAnswer = require('../app/dns/helpers/build_answer');
+const parseHeader = require('../app/dns/helpers/parse_header');
 
 // Common test data
 const domain = 'codecrafters.io';
