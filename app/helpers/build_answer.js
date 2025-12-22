@@ -45,15 +45,15 @@ module.exports = function buildAnswer(fields) {
     // Encode qclass
     const classBuf = Buffer.alloc(2);
     classBuf.writeUInt16BE(qclass, 0);
-    buf.push(typeBuf);
+    buf.push(classBuf);
 
     // Encode ttl
     const ttlBuf = Buffer.alloc(4);
-    ttlBuf.writeUInt16BE(rdlength, 0);
+    ttlBuf.writeUInt32BE(ttl, 0);
     buf.push(ttlBuf);
 
     // Encode rdlength
-    const rdlengthBuf = Buffer.alloc(4);
+    const rdlengthBuf = Buffer.alloc(2);
     rdlengthBuf.writeUInt16BE(rdlength, 0);
     buf.push(rdlengthBuf);
 
