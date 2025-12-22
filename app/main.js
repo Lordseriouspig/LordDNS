@@ -17,6 +17,8 @@
 
 const dgram = require("dgram");
 
+const parseHeader = require("./helpers/parse_header");
+
 const buildHeader = require("./helpers/build_header");
 const buildQuestion = require("./helpers/build_question");
 const buildAnswer = require("./helpers/build_answer")
@@ -26,10 +28,19 @@ udpSocket.bind(2053, "127.0.0.1");
 
 udpSocket.on("message", (buf, rinfo) => {
   try {
-    let response;
+    // Parse request
+    console.log(`Received ${buf.length} bytes from ${rinfo.address}:${rinfo.port}`);
+    console.log('Request Buffer:', buf.toString('hex'));
 
+    const header = parseHeader(buf);
+
+    // Get required info from header
+    const [ transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount ] = header;
+
+    // Build Response
+    let response;
     // Build Header
-    const headerFields = [1234,1,0,0,0,0,0,0,0,1,1,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+    const headerFields = [transactionID,1,opcode,0,0,rd,0,0,0,1,1,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
     response = buildHeader(headerFields);
 
     // Build Question
@@ -46,12 +57,12 @@ udpSocket.on("message", (buf, rinfo) => {
     udpSocket.send(response, rinfo.port, rinfo.address);
 
   } catch (e) {
-    console.log(`Error receiving data: ${e}`);
+    console.error(`Error receiving data: ${e}`);
   }
 });
 
 udpSocket.on("error", (err) => {
-  console.log(`Error: ${err}`);
+  console.error(`Error: ${err}`);
 });
 
 udpSocket.on("listening", () => {
