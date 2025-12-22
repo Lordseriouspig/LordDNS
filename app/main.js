@@ -18,6 +18,7 @@
 const dgram = require("dgram");
 
 const parseHeader = require("./helpers/parse_header");
+const parseQuestion = require("./helpers/parse_question");
 
 const buildHeader = require("./helpers/build_header");
 const buildQuestion = require("./helpers/build_question");
@@ -32,10 +33,21 @@ udpSocket.on("message", (buf, rinfo) => {
     console.log(`Received ${buf.length} bytes from ${rinfo.address}:${rinfo.port}`);
     console.log('Request Buffer:', buf.toString('hex'));
 
+
+    // Parse Header
     const header = parseHeader(buf);
 
     // Get required info from header
     const [ transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount ] = header;
+
+    // Parse Question
+    const { question, bytesRead } = parseQuestion(buf, 12);
+
+    const [
+        domainName,
+        qtype,
+        qclass
+    ] = question;
 
     // Check some things
     let responseRcode;
@@ -44,6 +56,14 @@ udpSocket.on("message", (buf, rinfo) => {
       responseRcode = 4;
     } else {
       responseRcode = 0;
+    }
+    if (qdcount !== 1) {
+      console.log(`Questions is not 1: ${qdcount}`); // Only supports 1 question for now
+      responseRcode = 1;
+    }
+    if (qtype !== 1) {
+      console.log(`Unsupported QTYPE: ${qtype}`); // Only supports A records for now
+      responseRcode = 4;
     }
 
     // Build Response
@@ -55,12 +75,12 @@ udpSocket.on("message", (buf, rinfo) => {
       response = buildHeader(headerFields);
 
       // Build Question
-      const questionFields = ["codecrafters.io",1,1];
+      const questionFields = [domainName, qtype, qclass];
       const question = buildQuestion(questionFields); // Domain, QTYPE, QCLASS
       response = Buffer.concat([response, question]);
 
       // Build Answer
-      const answerFields = ["codecrafters.io",1,1,60,4,Buffer.from([172,66,144,113])]; // Domain, QTYPE, QCLASS, TTL, RDLENGTH, RDATA (IP)
+      const answerFields = [domainName,1,1,60,4,Buffer.from([172,66,144,113])]; // Domain, QTYPE, QCLASS, TTL, RDLENGTH, RDATA (IP)
       const answer = buildAnswer(answerFields);
       response = Buffer.concat([response, answer]);
 
@@ -72,7 +92,7 @@ udpSocket.on("message", (buf, rinfo) => {
       response = buildHeader(headerFields);
 
       // Build Question
-      const questionFields = ["codecrafters.io",1,1];
+      const questionFields = [domainName, qtype, qclass];
       const question = buildQuestion(questionFields); // Domain, QTYPE, QCLASS
       response = Buffer.concat([response, question]);
 
