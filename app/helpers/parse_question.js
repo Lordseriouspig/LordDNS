@@ -19,28 +19,42 @@ module.exports = function parseQuestion(buf, offset) {
     const labels = [];
     let i = offset;
 
+    let jumped = false;
+    let bytesRead = 0;
+
     while (true) {
         const len = buf[i];
+
+        // Handle compression
+        if ((len & 0xC0) === 0xC0) {
+            const pointer = ((len & 0x3F) << 8) | buf[i + 1];
+            if (!jumped) bytesRead += 2;
+            i = pointer;
+            jumped = true;
+            continue;
+        }
         if (len === 0) {
+            if (!jumped) bytesRead += 1;
             i += 1;
             break;
         }
 
         labels.push(buf.slice(i + 1, i + 1 + len).toString('ascii'));
+
+        if (!jumped) bytesRead += len + 1;
         i += len + 1;
     }
     const domainName = labels.join('.');
-    const bytesRead = i - offset;
-    let curser = offset + bytesRead;
+    let cursor = offset + bytesRead;
 
-    const qtype = buf.readUInt16BE(curser);
-    curser += 2;
+    const qtype = buf.readUInt16BE(cursor);
+    cursor += 2;
 
-    const qclass = buf.readUInt16BE(curser);
-    curser += 2;
+    const qclass = buf.readUInt16BE(cursor);
+    cursor += 2;
 
     return {
         question: [ domainName, qtype, qclass ],
-        bytesRead: curser - offset
+        bytesRead: cursor - offset
     }
 }    
