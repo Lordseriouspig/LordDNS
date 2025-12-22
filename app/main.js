@@ -40,61 +40,68 @@ udpSocket.on("message", (buf, rinfo) => {
     // Get required info from header
     const [ transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount ] = header;
 
-    // Parse Question
-    const { question, bytesRead } = parseQuestion(buf, 12);
-
-    const [
-        domainName,
-        qtype,
-        qclass
-    ] = question;
+    // Parse Questions
+    let offset = 12;
+    const questions = [];
+    for (let i = 0; i < qdcount; i++) {
+        const { question, bytesRead } = parseQuestion(buf, offset);
+        questions.push(question);
+        offset += bytesRead;
+    }
 
     // Check some things
-    let responseRcode;
+    let responseRcode = 0;
     if (opcode !== 0) {
       console.log(`Unsupported opcode: ${opcode}`);
       responseRcode = 4;
     } else {
       responseRcode = 0;
     }
-    if (qdcount !== 1) {
-      console.log(`Questions is not 1: ${qdcount}`); // Only supports 1 question for now
-      responseRcode = 1;
-    }
-    if (qtype !== 1) {
-      console.log(`Unsupported QTYPE: ${qtype}`); // Only supports A records for now
-      responseRcode = 4;
-    }
+    for (const [domainName, qtype, qclass] of questions) {
+        if (qtype !== 1) {
+            console.log(`Unsupported QTYPE: ${qtype}`);
+            responseRcode = 4;
+            break;
+        }
+}
 
     // Build Response
     let response;
 
     if (responseRcode === 0) {
       // Build Header
-      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,responseRcode,1,1,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,responseRcode,qdcount,qdcount,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
       response = buildHeader(headerFields);
 
-      // Build Question
-      const questionFields = [domainName, qtype, qclass];
-      const question = buildQuestion(questionFields); // Domain, QTYPE, QCLASS
-      response = Buffer.concat([response, question]);
+      // Build Questions
+      for (const q of questions) {
+          const questionBuf = buildQuestion(q); // domainName, qtype, qclass
+          response = Buffer.concat([response, questionBuf]);
+      }
 
-      // Build Answer
-      const answerFields = [domainName,1,1,60,4,Buffer.from([172,66,144,113])]; // Domain, QTYPE, QCLASS, TTL, RDLENGTH, RDATA (IP)
-      const answer = buildAnswer(answerFields);
-      response = Buffer.concat([response, answer]);
+      // Build Answers
+      for (const q of questions) {
+          const [domainName, qtype, qclass] = q;
+
+          if (qtype === 1) {
+              const answerFields = [domainName, qtype, qclass, 60, 4, Buffer.from([172,66,144,113])];
+              const answerBuf = buildAnswer(answerFields);
+              response = Buffer.concat([response, answerBuf]);
+          }
+      }
 
       // Send Response
       udpSocket.send(response, rinfo.port, rinfo.address);
     } else {
       // Build Header
-      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,responseRcode,1,0,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
+      const headerFields = [transactionID,1,opcode,0,0,rd,0,0,responseRcode,qdcount,0,0,0]; // transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount
       response = buildHeader(headerFields);
 
       // Build Question
-      const questionFields = [domainName, qtype, qclass];
-      const question = buildQuestion(questionFields); // Domain, QTYPE, QCLASS
-      response = Buffer.concat([response, question]);
+      for (const q of questions) {
+          const questionBuf = buildQuestion(q);
+          response = Buffer.concat([response, questionBuf]);
+      }
 
       // Send Response
       udpSocket.send(response, rinfo.port, rinfo.address);
