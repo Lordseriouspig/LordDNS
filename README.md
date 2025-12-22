@@ -1,36 +1,14 @@
-[![progress-banner](https://backend.codecrafters.io/progress/dns-server/f828f8f6-1e76-4d7a-bba7-6940e11c4931)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# LordDNS
+LordDNS is a proof-of-concept DNS server that really shouldn't be used in production. No seriously, this thing probably has so many vulnerabilities lmao.
+In all seriousness, I made this project because I wanted to learn how DNS worked, and what better way to learn how something works then to make it myself!
+I began this project with the Codecrafters tutorial. These tutorials are great because they don't actually give you the code and require you to figure it out for yourself.
+If you, for some reason, want to run this DNS server on your own system, please follow the steps below. The steps apply to any operating system.
 
-This is a starting point for JavaScript solutions to the
-["Build Your Own DNS server" Challenge](https://app.codecrafters.io/courses/dns-server/overview).
+## Installation
+1. Download and install node and npm if you don't already have them installed. I don't have time to explain that here, so check out [this page](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) for instructions.
+2. Run ``npm install``
+3. Run ``npm run dev`` or ``npm run start``. Either work because they literally do the same thing.
+4. Profit
 
-In this challenge, you'll build a DNS server that's capable of parsing and
-creating DNS packets, responding to DNS queries, handling various record types
-and doing recursive resolve. Along the way we'll learn about the DNS protocol,
-DNS packet format, root servers, authoritative servers, forwarding servers,
-various record types (A, AAAA, CNAME, etc) and more.
-
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
-
-# Passing the first stage
-
-The entry point for your `your_program.sh` implementation is in `app/main.js`.
-Study and uncomment the relevant code, and push your changes to pass the first
-stage:
-
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
-```
-
-Time to move on to the next stage!
-
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
-
-1. Ensure you have `node (21)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.js`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+## Getting your own domain
+If you want to get your own domain on LordDNS, dm me on Slack. I'll set up a small website for it at some point. Just be aware this dosn't come with hosting, you gotta figure that out yourself.
