@@ -38,6 +38,7 @@ udpSocket.on("message", (buf, rinfo) => {
     const [ transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount ] = header;
 
     // Check some things
+    let responseRcode;
     if (opcode !== 0) {
       console.log(`Unsupported opcode: ${opcode}`);
       responseRcode = 4;
@@ -61,7 +62,7 @@ udpSocket.on("message", (buf, rinfo) => {
       // Build Answer
       const answerFields = ["codecrafters.io",1,1,60,4,Buffer.from([172,66,144,113])]; // Domain, QTYPE, QCLASS, TTL, RDLENGTH, RDATA (IP)
       const answer = buildAnswer(answerFields);
-      response = Buffer.concat([response, answer])
+      response = Buffer.concat([response, answer]);
 
       // Send Response
       udpSocket.send(response, rinfo.port, rinfo.address);
