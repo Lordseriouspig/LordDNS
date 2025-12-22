@@ -42,6 +42,5 @@ module.exports = function parseHeader(buf) {
     const arcount = buf.readUInt16BE(10);
 
     // Return everything
-    console.log('Parsed Header:', [transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount]);
     return [transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount];
 }
