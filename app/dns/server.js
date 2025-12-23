@@ -18,10 +18,23 @@
 const dgram = require("dgram");
 
 const parseRequest = require("./helpers/parse_request");
-const buildResponse = require("./helpers/build_response");
+const { buildResponse, buildErrorResponse } = require("./helpers/build_response");
 const buildHeader = require("./helpers/build_header");
 
-let transactionID, opcode, rd;
+const {
+    FORMERR,
+    SRVFAIL,
+    NXDOMAIN,
+    NOTIMP,
+    REFUSED,
+    YXDOMAIN,
+    YXRRSET,
+    NXRRSET,
+    NOTAUTH,
+    NOTZONE,
+} = require("./helpers/error_classes");
+
+let transactionID, opcode, rd, qdcount;
 
 module.exports = function startDNS(port = 53, host = "127.0.0.1") {
   const udpSocket = dgram.createSocket("udp4");
@@ -31,40 +44,47 @@ module.exports = function startDNS(port = 53, host = "127.0.0.1") {
     try {
       // Parse request
       console.log('--');
-      console.log(`Received ${buf.length} bytes from ${rinfo.address}:${rinfo.port}`);
-      console.log('Request Buffer:', buf.toString('hex'));
+      console.log(`[DNS] Received ${buf.length} bytes from ${rinfo.address}:${rinfo.port}`);
   
       ({ header, questions, transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount } = parseRequest(buf));
+      console.log(`[DNS][Request] Transaction ID: ${transactionID}, Questions: ${qdcount}. Requesting ${questions.toString()}`);
+      console.debug('[DNS][Request] Request Buffer:', buf.toString('hex'));
+
   
       // Check some things
-      let responseRcode = 0;
       if (opcode !== 0) {
-        console.warn(`Unsupported opcode: ${opcode}`);
-        responseRcode = 4;
-      } else {
-        responseRcode = 0;
-      }
-      for (const [domainName, qtype, qclass] of questions) {
-          if (qtype !== 1) {
-              console.warn(`Unsupported QTYPE: ${qtype}`);
-              responseRcode = 4;
-              break;
-          }
+        throw new NOTIMP(`Unsupported opcode: ${opcode}`);
       }
   
       // Build Response
-      const response = buildResponse(transactionID,opcode,rd,responseRcode,qdcount,questions);
+      const { response, ancount: responseAncount, questionBuffers, answerBuffers } = buildResponse(transactionID,opcode,rd,qdcount,questions);
+      console.log(`[DNS][Response] Transaction ID: ${transactionID}, Rcode: 0, Questions: ${qdcount}, ${questionBuffers} Answers: ${responseAncount}, ${answerBuffers}`);
   
       // Send Response
-      console.log('Response Buffer:', response.toString('hex'));
+      console.debug('[DNS][Response] Response Buffer:', response.toString('hex'));
       udpSocket.send(response, rinfo.port, rinfo.address);
   
     } catch (e) {
-      console.error(`Error handling request: ${e}\n${e.stack}`);
-      try {
-        udpSocket.send(buildHeader([transactionID,1,opcode,0,0,rd,0,0,2,0,0,0,0]), rinfo.port, rinfo.address);
-      } catch (e) { // something seriously fucked up...
-        console.error(`Also failed to send error response: ${e}\n${e.stack}`);
+      if (e instanceof FORMERR || e instanceof SRVFAIL || e instanceof NXDOMAIN || e instanceof NOTIMP || e instanceof REFUSED || e instanceof YXDOMAIN || e instanceof YXRRSET || e instanceof NXRRSET || e instanceof NOTAUTH || e instanceof NOTZONE) {
+        console.log(`[DNS] ${e.message}`);
+        try {
+          const response = buildErrorResponse(transactionID,opcode,rd,e.rcode,qdcount,questions);
+          console.log(`[DNS][Response] Transaction ID: ${transactionID}, Rcode: ${e.rcode}`);
+          console.debug('[DNS][Response] Response Buffer:', response.toString('hex'));
+          udpSocket.send(response, rinfo.port, rinfo.address);
+        } catch (e) {
+          console.error(`[DNS][Response] Failed to send error response: ${e}\n${e.stack}`);
+        }
+      } else {
+        console.error(`[DNS] Unexpected error occurred: ${e}\n${e.stack}`);
+        try {
+          const response = buildErrorResponse(transactionID,opcode,rd,2,qdcount,questions);
+          console.log(`[DNS][Response] Transaction ID: ${transactionID}, Rcode: 2`);
+          console.debug('[DNS][Response] Response Buffer:', response.toString('hex'));
+          udpSocket.send(response, rinfo.port, rinfo.address);
+        } catch (e) { // something seriously fucked up...
+          console.error(`[DNS][Response] Failed to send error response: ${e}\n${e.stack}`);
+        }
       }
     }
   });

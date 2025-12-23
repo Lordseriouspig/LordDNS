@@ -25,7 +25,6 @@ const buildAnswer = require("./build_answer")
 module.exports = function parseRequest(buf) {
     // Parse Header
     const header = parseHeader(buf);
-    console.log('Header:', header.toString());
 
     // Get required info from header
     const [ transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount ] = header;
@@ -38,7 +37,6 @@ module.exports = function parseRequest(buf) {
         questions.push(question);
         offset += bytesRead;
     }
-    console.log('Questions:', questions.toString());
 
     return { header, questions, transactionID, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount };
 }
